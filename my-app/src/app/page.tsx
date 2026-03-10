@@ -27,11 +27,11 @@ export default function Home() {
         className="z-10 text-center max-w-3xl"
       >
         <div className="inline-block px-4 py-1.5 mb-6 rounded-full bg-indigo-500/10 border border-indigo-500/20 text-indigo-300 text-sm font-medium tracking-wide">
-          Knowledge Engine v1.0
+          AcademIQ v1.0
         </div>
 
         <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 text-transparent bg-clip-text bg-gradient-to-r from-blue-100 to-indigo-200">
-          Institutional Knowledge<br />Intelligence Graph
+          Academ<span className="text-indigo-400">IQ</span><br />Knowledge Intelligence
         </h1>
 
         <p className="text-lg text-slate-400 mb-10 max-w-2xl mx-auto leading-relaxed">

@@ -45,7 +45,7 @@ export default function Navbar() {
                         <HexagonIcon className="w-5 h-5 text-white" />
                     </div>
                     <span className="font-bold text-lg bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300 hidden sm:block">
-                        HackOn
+                        AcademIQ
                     </span>
                 </Link>
 

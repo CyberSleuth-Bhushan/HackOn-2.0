@@ -5,7 +5,7 @@ import "./globals.css";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "HackOn Knowledge Engine",
+  title: "AcademIQ – AI Knowledge Intelligence",
   description: "AI-Powered Institutional Knowledge Intelligence Engine",
 };
 

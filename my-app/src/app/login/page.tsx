@@ -78,7 +78,7 @@ export default function LoginPage() {
                         {isLogin ? "Welcome Back" : "Create Account"}
                     </h1>
                     <p className="text-slate-400 text-sm">
-                        {isLogin ? "Sign in to continue to HackOn Knowledge Engine" : "Join the dynamic intelligence network"}
+                        {isLogin ? "Sign in to continue to AcademIQ" : "Join the dynamic intelligence network"}
                     </p>
                 </div>
 

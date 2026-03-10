@@ -1,0 +1,447 @@
+
+================================================================================
+                  AcademIQ - SYSTEM BLOCK DIAGRAM (Working)
+================================================================================
+
+
+  ╔══════════════════════════════════════════════════════════════════════════╗
+  ║                          USER'S WEB BROWSER                            ║
+  ║                                                                        ║
+  ║   ┌────────────┐  ┌────────────┐  ┌────────────┐  ┌────────────────┐   ║
+  ║   │  Landing   │  │  Semantic  │  │ Knowledge  │  │    Login /     │   ║
+  ║   │   Page     │  │  Search    │  │   Graph    │  │   Register     │   ║
+  ║   │   ( / )    │  │ (/search)  │  │  (/graph)  │  │   (/login)     │   ║
+  ║   └─────┬──────┘  └─────┬──────┘  └─────┬──────┘  └──────┬─────────┘   ║
+  ║         │               │               │                │             ║
+  ║         │  ┌────────────┴───────────────┐│   ┌───────────┘             ║
+  ║         │  │     PUBLIC PAGES           ││   │  AUTH PAGES             ║
+  ║         │  │  (No login required)       ││   │                         ║
+  ║         │  └────────────────────────────┘│   │                         ║
+  ║         │                                │   │                         ║
+  ║   ══════╪════════════════════════════════╪═══╪═══════════════════════   ║
+  ║         │    PROTECTED PAGES             │   │                         ║
+  ║         │    (Login required)            │   │                         ║
+  ║         │                                │   │                         ║
+  ║   ┌─────┴──────┐  ┌─────────────┐  ┌────┴───┴────┐  ┌─────────────┐   ║
+  ║   │ Complete   │  │  Proposals  │  │  Community  │  │  Real-Time  │   ║
+  ║   │  Profile   │  │ (/proposals)│  │    Forum    │  │    Chat     │   ║
+  ║   │ (/complete │  │             │  │  (/queries) │  │   (/chat)   │   ║
+  ║   │  -profile) │  └──────┬──────┘  └──────┬──────┘  └──────┬──────┘   ║
+  ║   └──────┬─────┘         │                │                │           ║
+  ║          │               │                │                │           ║
+  ║   ┌──────┴─────────────────────────────────────────────────┴──────┐     ║
+  ║   │              ROLE-BASED DASHBOARDS                           │     ║
+  ║   │                                                              │     ║
+  ║   │  ┌──────────┐ ┌──────────┐ ┌──────────┐ ┌────────────────┐  │     ║
+  ║   │  │ Student  │ │  Expert  │ │Institute │ │     Admin      │  │     ║
+  ║   │  │Dashboard │ │Dashboard │ │Dashboard │ │   Dashboard    │  │     ║
+  ║   │  └──────────┘ └──────────┘ └──────────┘ │  + Analytics   │  │     ║
+  ║   │                                         │  + Team Mgmt   │  │     ║
+  ║   │  ┌──────────────────────┐               └────────────────┘  │     ║
+  ║   │  │  Verification Team   │                                   │     ║
+  ║   │  │     Dashboard        │                                   │     ║
+  ║   │  │  + Approve/Reject    │                                   │     ║
+  ║   │  └──────────────────────┘                                   │     ║
+  ║   └──────────────────────────────────────────────────────────────┘     ║
+  ║                                                                        ║
+  ╚════════════════════════════════╤═══════════════════════════════════════╝
+                                   │
+                       ┌───────────┴───────────┐
+                       │   Next.js Server      │
+                       │   (API Route Layer)    │
+                       │                       │
+                       │  POST /api/search     │
+                       │  POST /api/admin/     │
+                       │       create-user     │
+                       └───────┬───────────────┘
+                               │
+          ┌────────────────────┼────────────────────┐
+          │                    │                    │
+          ▼                    ▼                    ▼
+  ┌───────────────┐   ┌───────────────┐   ┌───────────────┐
+  │  Firebase     │   │  Google       │   │   Pinecone    │
+  │  Platform     │   │  Gemini AI    │   │  Vector DB    │
+  │               │   │               │   │               │
+  │ ┌───────────┐ │   │  Embedding    │   │  768-dim      │
+  │ │   Auth    │ │   │  Model:       │   │  Cosine       │
+  │ │           │ │   │  gemini-      │   │  Similarity   │
+  │ │ Email/Pwd │ │   │  embedding-   │   │  Index        │
+  │ │ Google    │ │   │  001          │   │               │
+  │ │ OAuth     │ │   │               │   │  Stores node  │
+  │ └───────────┘ │   │  Input: Text  │   │  embeddings   │
+  │               │   │  Output: 768d │   │  for search   │
+  │ ┌───────────┐ │   │  Vector       │   │               │
+  │ │ Firestore │ │   └───────────────┘   └───────────────┘
+  │ │  (NoSQL)  │ │
+  │ │           │ │
+  │ │ See below │ │
+  │ └───────────┘ │
+  │               │
+  │ ┌───────────┐ │
+  │ │Admin SDK  │ │
+  │ │(Server)   │ │
+  │ └───────────┘ │
+  └───────────────┘
+
+
+================================================================================
+         FIRESTORE DATABASE BLOCK DIAGRAM (Collections & Relations)
+================================================================================
+
+
+  ┌─────────────────────────────────────────────────────────────────────┐
+  │                    FIRESTORE DATABASE                               │
+  │                                                                     │
+  │   ┌──────────────┐       ┌──────────────┐       ┌──────────────┐   │
+  │   │    users     │       │    nodes     │       │    edges     │   │
+  │   │              │       │              │       │              │   │
+  │   │ uid          │       │ id           │       │ source (ref) │   │
+  │   │ email        │       │ type         │◄──────│ target (ref) │   │
+  │   │ name         │       │ name/title   │       │ type         │   │
+  │   │ role         │       │ department   │       │  (authored,  │   │
+  │   │ org          │       │ expertise[]  │       │   leads,     │   │
+  │   │ dob          │       │ interests[]  │       │   expert_in) │   │
+  │   │ mobile       │       │ keywords[]   │       └──────────────┘   │
+  │   │ linkedin     │       │ year         │                          │
+  │   │ github       │       │ funding      │                          │
+  │   │ profileDone  │       └──────┬───────┘                          │
+  │   │ verifyStatus │              │                                  │
+  │   │ proofUrl     │              │ (vectors synced to Pinecone)     │
+  │   │ rejectReason │              │                                  │
+  │   └──────────────┘              ▼                                  │
+  │                         ┌──────────────┐                           │
+  │                         │   Pinecone   │                           │
+  │                         │   Vectors    │                           │
+  │                         └──────────────┘                           │
+  │                                                                     │
+  │   ┌──────────────┐   ┌──────────────┐   ┌───────────────────────┐  │
+  │   │  proposals   │   │   queries    │   │       chats          │  │
+  │   │              │   │              │   │                       │  │
+  │   │ senderId     │   │ authorId     │   │ participants[]       │  │
+  │   │ senderName   │   │ title        │   │ status               │  │
+  │   │ receiverId   │   │ description  │   │  (pending/accepted/  │  │
+  │   │ receiverName │   │ status       │   │   rejected)          │  │
+  │   │ topic        │   │  (open /     │   │ initiatorId          │  │
+  │   │ message      │   │   resolved)  │   │ updatedAt            │  │
+  │   │ status       │   │ answerCount  │   │                       │  │
+  │   │  (pending /  │   │ createdAt    │   │  ┌─────────────────┐  │  │
+  │   │   accepted / │   │              │   │  │   messages      │  │  │
+  │   │   rejected)  │   │ ┌──────────┐ │   │  │  (subcollection)│  │  │
+  │   │ createdAt    │   │ │ answers  │ │   │  │                 │  │  │
+  │   └──────────────┘   │ │(sub-coll)│ │   │  │  senderId       │  │  │
+  │                      │ │          │ │   │  │  text            │  │  │
+  │                      │ │authorId  │ │   │  │  createdAt       │  │  │
+  │                      │ │content   │ │   │  └─────────────────┘  │  │
+  │                      │ │isAccepted│ │   └───────────────────────┘  │
+  │                      │ │createdAt │ │                               │
+  │                      │ └──────────┘ │                               │
+  │                      └──────────────┘                               │
+  └─────────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+              SEMANTIC SEARCH PIPELINE (Block Diagram)
+================================================================================
+
+
+  ┌─────────────────┐
+  │  User types     │
+  │  natural lang   │
+  │  query          │
+  │  "AI for health"│
+  └────────┬────────┘
+           │
+           ▼
+  ┌─────────────────┐
+  │  POST /api/     │
+  │  search         │
+  │  { query: ... } │
+  └────────┬────────┘
+           │
+           ▼
+  ┌─────────────────┐     ┌─────────────────┐
+  │  Gemini AI      │     │                 │
+  │  Embedding      │────►│  768-dimension  │
+  │  Model          │     │  Float Vector   │
+  │  (gemini-       │     │  [0.12, -0.45,  │
+  │  embedding-001) │     │   0.78, ...]    │
+  └─────────────────┘     └────────┬────────┘
+                                   │
+                                   ▼
+                          ┌─────────────────┐
+                          │  Pinecone       │
+                          │  Vector Search  │
+                          │                 │
+                          │  Cosine         │
+                          │  Similarity     │
+                          │  Top K = 10     │
+                          └────────┬────────┘
+                                   │
+                                   ▼
+                          ┌─────────────────┐
+                          │  Matching IDs   │
+                          │                 │
+                          │  prof_1 (0.95)  │
+                          │  paper_1 (0.89) │
+                          │  student_2(0.82)│
+                          │  ...            │
+                          └────────┬────────┘
+                                   │
+                                   ▼
+                          ┌─────────────────┐
+                          │  Firestore      │
+                          │  Hydration      │
+                          │                 │
+                          │  Fetch full     │
+                          │  node documents │
+                          │  by matched IDs │
+                          └────────┬────────┘
+                                   │
+                                   ▼
+                          ┌─────────────────┐
+                          │  Ranked         │
+                          │  Results        │
+                          │                 │
+                          │  Displayed as   │
+                          │  animated cards │
+                          │  on /search     │
+                          └─────────────────┘
+
+
+================================================================================
+              USER AUTHENTICATION & VERIFICATION PIPELINE
+================================================================================
+
+
+  ┌──────────┐    ┌──────────┐    ┌───────────┐    ┌──────────────────┐
+  │  New     │    │  Login   │    │ Complete  │    │  Verification   │
+  │  User    │───►│  Page    │───►│  Profile  │───►│  Queue          │
+  │          │    │ (/login) │    │  Form     │    │  (Pending)      │
+  └──────────┘    └────┬─────┘    └─────┬─────┘    └────────┬─────────┘
+                       │                │                    │
+                       ▼                ▼                    ▼
+               ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐
+               │ Firebase     │  │ Firestore    │  │ Verification    │
+               │ Auth creates │  │ updates:     │  │ Team reviews:   │
+               │ account      │  │              │  │                 │
+               │              │  │ +org, dob    │  │ Downloads proof │
+               │ Stores:      │  │ +mobile      │  │ document        │
+               │ - UID        │  │ +linkedin    │  │                 │
+               │ - email      │  │ +proofUrl    │  │   ┌───────┐     │
+               │ - displayName│  │              │  │   │Approve│     │
+               └──────────────┘  │ profileDone  │  │   └───┬───┘     │
+                                 │  = true      │  │       │         │
+               ┌──────────────┐  │              │  │       ▼         │
+               │ Firestore    │  │ verifyStatus │  │  status =       │
+               │ user doc     │  │  = "pending" │  │  "approved"     │
+               │ created:     │  │              │  │                 │
+               │              │  └──────────────┘  │   ┌───────┐     │
+               │ - email      │                    │   │Reject │     │
+               │ - role       │                    │   └───┬───┘     │
+               │ - name       │                    │       │         │
+               │ - profileDone│                    │       ▼         │
+               │   = false    │                    │  status =       │
+               └──────────────┘                    │  "rejected"     │
+                                                   │  + reason       │
+                                                   └──────────────────┘
+
+
+================================================================================
+              COLLABORATION & COMMUNICATION BLOCK DIAGRAM
+================================================================================
+
+
+  ┌─────────────────────────────────────────────────────────────────┐
+  │                  COLLABORATION LAYER                            │
+  │                                                                 │
+  │  ┌───────────────────────────────────────────────────────────┐  │
+  │  │              PROPOSAL SYSTEM (/proposals)                 │  │
+  │  │                                                           │  │
+  │  │   Sender ──── Creates Proposal ────► Receiver             │  │
+  │  │     │          (topic + message)        │                  │  │
+  │  │     │          status: "pending"        │                  │  │
+  │  │     │                                   ▼                  │  │
+  │  │     │                          ┌──────────────┐            │  │
+  │  │     │                          │   Accept  or │            │  │
+  │  │     │                          │   Reject     │            │  │
+  │  │     │                          └──────┬───────┘            │  │
+  │  │     │                                 │                    │  │
+  │  │     ◄─── Real-time status update ─────┘                   │  │
+  │  │          via onSnapshot                                    │  │
+  │  └───────────────────────────────────────────────────────────┘  │
+  │                                                                 │
+  │  ┌───────────────────────────────────────────────────────────┐  │
+  │  │              COMMUNITY FORUM (/queries)                   │  │
+  │  │                                                           │  │
+  │  │   Author ──── Posts Query ────► Community                 │  │
+  │  │     │          (title + desc)      │                      │  │
+  │  │     │          status: "open"      │                      │  │
+  │  │     │                              ▼                      │  │
+  │  │     │                     Posts Answer(s)                 │  │
+  │  │     │                              │                      │  │
+  │  │     ▼                              │                      │  │
+  │  │   Reviews answers ◄───────────────┘                      │  │
+  │  │     │                                                     │  │
+  │  │     ▼                                                     │  │
+  │  │   Marks best answer as "Accepted"                        │  │
+  │  │   Query status → "resolved"                              │  │
+  │  └───────────────────────────────────────────────────────────┘  │
+  │                                                                 │
+  │  ┌───────────────────────────────────────────────────────────┐  │
+  │  │              REAL-TIME CHAT (/chat)                       │  │
+  │  │                                                           │  │
+  │  │   User A ──── Searches directory ────► Finds User B      │  │
+  │  │     │          (by name/role/org/skill)                    │  │
+  │  │     │                                                     │  │
+  │  │     ├── Sends Chat Request ────────► User B               │  │
+  │  │     │   status: "pending"               │                  │  │
+  │  │     │                                   ▼                  │  │
+  │  │     │                          ┌──────────────┐            │  │
+  │  │     │                          │   Accept  or │            │  │
+  │  │     │                          │   Decline    │            │  │
+  │  │     │                          └──────┬───────┘            │  │
+  │  │     │                                 │                    │  │
+  │  │     │          If Accepted:           │                    │  │
+  │  │     │                                 ▼                    │  │
+  │  │     │                      ┌────────────────────┐          │  │
+  │  │     ◄─── Real-time ───────►│   Message Stream   │          │  │
+  │  │          Messages          │   via onSnapshot    │          │  │
+  │  │          (Firestore)       └────────────────────┘          │  │
+  │  └───────────────────────────────────────────────────────────┘  │
+  └─────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+              ADMIN ANALYTICS BLOCK DIAGRAM
+================================================================================
+
+
+  ┌─────────────────────────────────────────────────────────────────┐
+  │                 ADMIN DASHBOARD (/dashboards/admin)             │
+  │                                                                 │
+  │   ┌───────────────┐                  ┌───────────────────────┐  │
+  │   │   Firestore   │                  │   SYSTEM ANALYTICS    │  │
+  │   │   "users"     │─── Aggregate ───►│                       │  │
+  │   │   collection  │    by role &     │  ┌─────────────────┐  │  │
+  │   │               │    status        │  │   PIE CHART     │  │  │
+  │   └───────────────┘                  │  │   User Role     │  │  │
+  │                                      │  │   Distribution  │  │  │
+  │                                      │  │                 │  │  │
+  │                                      │  │  Student: 60%   │  │  │
+  │                                      │  │  Expert:  20%   │  │  │
+  │                                      │  │  Institute:10%  │  │  │
+  │                                      │  │  Others:  10%   │  │  │
+  │                                      │  └─────────────────┘  │  │
+  │                                      │                       │  │
+  │                                      │  ┌─────────────────┐  │  │
+  │                                      │  │   BAR CHART     │  │  │
+  │                                      │  │   Verification  │  │  │
+  │                                      │  │   Statuses      │  │  │
+  │                                      │  │                 │  │  │
+  │                                      │  │  Approved: ████ │  │  │
+  │                                      │  │  Pending:  ██   │  │  │
+  │                                      │  │  Rejected: █    │  │  │
+  │                                      │  └─────────────────┘  │  │
+  │                                      └───────────────────────┘  │
+  │                                                                 │
+  │   ┌───────────────────────────────────────────────────────────┐  │
+  │   │            CREATE TEAM MEMBER                             │  │
+  │   │                                                           │  │
+  │   │   Admin fills form ──► POST /api/admin/create-user        │  │
+  │   │                              │                            │  │
+  │   │                              ▼                            │  │
+  │   │                     Firebase Admin SDK                    │  │
+  │   │                     creates Auth user                    │  │
+  │   │                     + Firestore doc                      │  │
+  │   └───────────────────────────────────────────────────────────┘  │
+  └─────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+              KNOWLEDGE GRAPH VISUALIZATION BLOCK DIAGRAM
+================================================================================
+
+
+  ┌───────────────────────────────────────────────────────────────────┐
+  │                  KNOWLEDGE GRAPH (/graph)                        │
+  │                                                                   │
+  │   Firestore "nodes"            Firestore "edges"                  │
+  │   ┌───────────────┐            ┌───────────────┐                  │
+  │   │ Professor     │            │ authored_by   │                  │
+  │   │ Student       │            │ co_authored   │                  │
+  │   │ Paper         │◄───────────│ worked_on     │                  │
+  │   │ Project       │            │ leads         │                  │
+  │   │ Skill         │            │ expert_in     │                  │
+  │   └───────┬───────┘            └───────┬───────┘                  │
+  │           │                            │                          │
+  │           └────────────┬───────────────┘                          │
+  │                        │                                          │
+  │                        ▼                                          │
+  │              ┌───────────────────┐                                │
+  │              │ react-force-      │                                │
+  │              │ graph-2d          │                                │
+  │              │                   │                                │
+  │              │ Physics Engine    │                                │
+  │              │ Canvas Renderer   │                                │
+  │              └─────────┬─────────┘                                │
+  │                        │                                          │
+  │              ┌─────────▼─────────┐                                │
+  │              │  LAYOUT MODES     │                                │
+  │              │                   │                                │
+  │              │  [Standard]       │  Force-directed scatter        │
+  │              │  [Top-Down Tree]  │  Hierarchical (dagMode: td)    │
+  │              │  [Sequential]     │  Left-Right (dagMode: lr)      │
+  │              │  [Radial]         │  Circular (dagMode: radialout) │
+  │              └───────────────────┘                                │
+  │                                                                   │
+  │   NODE COLORS:                                                    │
+  │   ● Professor  = Red (#ef4444)                                    │
+  │   ● Student    = Blue (#3b82f6)                                   │
+  │   ● Paper      = Green (#10b981)                                  │
+  │   ● Project    = Green (#10b981)                                  │
+  │   ● Skill      = Yellow (#f59e0b)                                 │
+  └───────────────────────────────────────────────────────────────────┘
+
+
+================================================================================
+              FULL SYSTEM ARCHITECTURE (High-Level Overview)
+================================================================================
+
+
+   ┌─────────────────────────────────────────────────────────────────────┐
+   │                        FRONTEND (Next.js 16 + React 19)            │
+   │                                                                     │
+   │    Landing ── Search ── Graph ── Proposals ── Forum ── Chat        │
+   │    Login ── Profile ── Student/Expert/Institute/Admin Dashboards   │
+   │                                                                     │
+   │    UI: Tailwind CSS 4 + Framer Motion + Recharts                   │
+   │    Graph: react-force-graph-2d                                      │
+   └──────────────────────────────┬──────────────────────────────────────┘
+                                  │
+                     ┌────────────┴────────────┐
+                     │    NEXT.JS API LAYER    │
+                     │                         │
+                     │  /api/search            │
+                     │  /api/admin/create-user │
+                     └────────────┬────────────┘
+                                  │
+         ┌────────────────────────┼────────────────────────┐
+         │                        │                        │
+         ▼                        ▼                        ▼
+  ┌──────────────┐      ┌──────────────────┐      ┌──────────────┐
+  │   FIREBASE   │      │   GOOGLE GEMINI  │      │   PINECONE   │
+  │              │      │                  │      │              │
+  │  Auth        │      │  gemini-         │      │  Vector DB   │
+  │  (Identity)  │      │  embedding-001   │      │  768-dim     │
+  │              │      │                  │      │  cosine      │
+  │  Firestore   │      │  Text → Vector   │      │  index       │
+  │  (Database)  │      │  Embedding       │      │              │
+  │              │      │                  │      │  Semantic    │
+  │  Admin SDK   │      │  Powers search   │      │  nearest    │
+  │  (Server)    │      │  intelligence    │      │  neighbor   │
+  └──────────────┘      └──────────────────┘      └──────────────┘
+
+
+================================================================================
+                        END OF BLOCK DIAGRAM
+================================================================================
