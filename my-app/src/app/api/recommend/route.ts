@@ -10,6 +10,13 @@ export async function GET(req: Request) {
             return NextResponse.json({ error: "Missing userId parameter" }, { status: 400 });
         }
 
+        if (!adminDb) {
+            return NextResponse.json(
+                { error: "Firebase Admin is not configured. Add API keys." },
+                { status: 500 }
+            );
+        }
+
         // 1. Find all edges connected to the user
         // In a real scenario, this would be a deep Graph Traversal algorithm (like Neo4j Cypher: 
         // MATCH (u:Person {id:$userId})-[:WORKS_ON]->(p:Project)<-[:WORKS_ON]-(c:Person) RETURN c)
@@ -68,7 +75,7 @@ export async function GET(req: Request) {
 
         let hydratedRecommendations: any[] = [];
         for (const chunk of candidateChunks) {
-            const nodesRef = adminDb.collection("nodes").where(adminDb.constructor.FieldPath.documentId(), "in", chunk);
+            const nodesRef = adminDb.collection("nodes").where(admin.firestore.FieldPath.documentId(), "in", chunk);
             const snapshot = await nodesRef.get();
             snapshot.forEach(doc => {
                 hydratedRecommendations.push({ id: doc.id, ...doc.data() });

@@ -58,9 +58,38 @@ async function seed() {
         await db.collection("edges").doc(`edge_${i}`).set(MOCK_EDGES[i]);
     }
 
-    // 2. Initialize Pinecone (Optional for seed, required for search)
-    if (process.env.PINECONE_API_KEY) {
-        console.log("Pinecone detected. Note: Embeddings must be generated via OpenAI API in production before upserting. Skipping Pinecone vector generation for mock data to save OpenAI credits. Real data should hit /api/search to auto-index.");
+    // 2. Initialize Pinecone & Gemini to generate mock vectors
+    if (process.env.PINECONE_API_KEY && process.env.GEMINI_API_KEY) {
+        console.log("Generating Gemini Embeddings & Uploading to Pinecone...");
+        const pc = new Pinecone({ apiKey: process.env.PINECONE_API_KEY });
+        const index = pc.index(process.env.PINECONE_INDEX_NAME || "knowledge-graph-index");
+
+        const { GoogleGenAI } = require("@google/genai");
+        const genAI = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
+
+        const vectors = [];
+        for (const node of MOCK_NODES) {
+            // Create a text representation of the node for embedding
+            const textToEmbed = `${node.name || node.title} ${node.type} ${node.department || ""} ${(node.expertise || node.keywords || node.interests || []).join(" ")}`;
+
+            const result = await genAI.models.embedContent({
+                model: "text-embedding-004",
+                contents: textToEmbed,
+            });
+            const embedding = result.embeddings[0].values;
+
+            vectors.push({
+                id: node.id,
+                values: embedding,
+                metadata: { type: node.type, name: node.name || node.title }
+            });
+        }
+
+        // Upsert in batches of 100 max (we only have 10 here)
+        await index.upsert(vectors);
+        console.log("Pinecone vectors uploaded successfully!");
+    } else {
+        console.log("Skipping Pinecone: Missing PINECONE_API_KEY or GEMINI_API_KEY.");
     }
 
     console.log("✅ Seeding Complete!");

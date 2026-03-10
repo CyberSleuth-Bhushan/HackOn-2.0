@@ -12,19 +12,25 @@ const initializeAdmin = () => {
 
     if (!projectId || !clientEmail || !privateKey) {
         console.warn(
-            "Firebase Admin environment variables are missing. Some backend features may fail."
+            "Firebase Admin environment variables are missing. Firebase Admin SDK will not be initialized."
         );
+        return null; // Prevent NextJS from crashing on boot
     }
 
-    return admin.initializeApp({
-        credential: admin.credential.cert({
-            projectId,
-            clientEmail,
-            privateKey,
-        }),
-    });
+    try {
+        return admin.initializeApp({
+            credential: admin.credential.cert({
+                projectId,
+                clientEmail,
+                privateKey,
+            }),
+        });
+    } catch (error) {
+        console.error("Firebase Admin Initialization Error", error);
+        return null;
+    }
 };
 
 export const adminApp = initializeAdmin();
-export const adminDb = adminApp.firestore();
-export const adminAuth = adminApp.auth();
+export const adminDb = adminApp ? adminApp.firestore() : null;
+export const adminAuth = adminApp ? adminApp.auth() : null;

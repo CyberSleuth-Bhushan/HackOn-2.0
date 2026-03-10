@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
-import { OpenAI } from "openai";
+import { GoogleGenerativeAI } from "@google/generative-ai";
 import { getPineconeIndex } from "@/lib/pinecone/pineconeClient";
 import { adminDb } from "@/lib/firebase/firebaseAdmin";
+import admin from "firebase-admin";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+// Delay initialization so module doesn't crash on boot if key is missing
+const getGenAI = () => new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "dummy");
 
 export async function POST(req: Request) {
     try {
@@ -13,19 +15,19 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Missing query" }, { status: 400 });
         }
 
-        if (!process.env.OPENAI_API_KEY || !process.env.PINECONE_API_KEY) {
+        if (!process.env.GEMINI_API_KEY || !process.env.PINECONE_API_KEY || !adminDb) {
             return NextResponse.json(
-                { error: "AI Services not configured yet. Add API keys to .env.local" },
+                { error: "AI Services or Firebase not configured yet. Add API keys to .env.local" },
                 { status: 500 }
             );
         }
 
-        // 1. Generate text embedding for the search query
-        const embeddingResponse = await openai.embeddings.create({
-            model: "text-embedding-3-small",
-            input: query,
-        });
-        const embedding = embeddingResponse.data[0].embedding;
+        const genAI = getGenAI();
+        const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
+
+        // 1. Generate text embedding for the search query using Gemini
+        const result = await model.embedContent(query);
+        const embedding = result.embedding.values;
 
         // 2. Query Pinecone Vector Database
         const index = getPineconeIndex();
@@ -45,7 +47,7 @@ export async function POST(req: Request) {
         // 3. Hydrate data by fetching nodes from Firestore
         // Note: 'in' queries are limited to 10 items in Firestore
         const nodesRef = adminDb.collection("nodes");
-        const snapshot = await nodesRef.where(adminDb.constructor.FieldPath.documentId(), "in", nodeIds).get();
+        const snapshot = await nodesRef.where(admin.firestore.FieldPath.documentId(), "in", nodeIds).get();
 
         const hydratedResults = snapshot.docs.map((doc) => ({
             id: doc.id,
