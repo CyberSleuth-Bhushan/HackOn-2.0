@@ -6,13 +6,15 @@ import { doc, getDoc, setDoc } from "firebase/firestore";
 import { auth, db } from "./firebaseClient";
 
 // Define the roles available in our system
-export type UserRole = "student" | "expert" | "institute" | "researcher" | null;
+export type UserRole = "student" | "expert" | "institute" | "researcher" | "admin" | "verification_team" | null;
 
 interface UserProfile {
     uid: string;
     email: string | null;
     role: UserRole;
     displayName: string | null;
+    profileCompleted?: boolean;
+    verificationStatus?: 'pending' | 'approved' | 'rejected' | null;
 }
 
 interface AuthContextType {
@@ -41,9 +43,14 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                 const userDoc = await getDoc(userDocRef);
 
                 let role: UserRole = null;
+                let profileCompleted = false;
+                let verificationStatus = null;
 
                 if (userDoc.exists()) {
-                    role = userDoc.data().role as UserRole;
+                    const data = userDoc.data();
+                    role = data.role as UserRole;
+                    profileCompleted = data.profileCompleted || false;
+                    verificationStatus = data.verificationStatus || null;
                 } else {
                     // This is a brand new user (e.g. via direct Google Sign-in)
                     // We assign them a default role and create their profile in the DB.
@@ -53,6 +60,7 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                             email: firebaseUser.email,
                             role: role,
                             displayName: firebaseUser.displayName,
+                            profileCompleted: false,
                             createdAt: new Date()
                         });
                     } catch (e) {
@@ -65,6 +73,8 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
                     email: firebaseUser.email,
                     displayName: firebaseUser.displayName,
                     role,
+                    profileCompleted,
+                    verificationStatus,
                 });
             } else {
                 setUser(null);

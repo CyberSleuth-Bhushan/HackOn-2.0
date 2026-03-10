@@ -76,7 +76,7 @@ async function seed() {
                 model: "gemini-embedding-001",
                 contents: textToEmbed,
             });
-            const embedding = result.embeddings[0].values;
+            const embedding = Array.from(result.embeddings[0].values).slice(0, 768);
 
             vectors.push({
                 id: node.id,

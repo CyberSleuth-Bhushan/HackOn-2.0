@@ -34,7 +34,9 @@ export async function POST(req: Request) {
             return NextResponse.json({ error: "Failed to generate embedding" }, { status: 500 });
         }
 
-        const embedding = Array.from(result.embeddings[0].values || []);
+        // The legacy embedding model outputs 3072 dims but the user's Pinecone db expects 768.
+        // We will take a deterministic slice of the first 768 dimensions.
+        const embedding = Array.from(result.embeddings[0].values || []).slice(0, 768);
 
         // 2. Query Pinecone Vector Database
         const index = getPineconeIndex();

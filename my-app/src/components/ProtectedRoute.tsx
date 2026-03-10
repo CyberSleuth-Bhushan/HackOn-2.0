@@ -22,9 +22,12 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
             } else if (allowedRoles && !allowedRoles.includes(user.role)) {
                 // Logged in but doesn't have the right role
                 router.push("/"); // Or an unauthorized page
+            } else if (!user.profileCompleted && user.role !== "admin" && user.role !== "verification_team" && pathname !== "/complete-profile") {
+                // Profile not completed, force completion
+                router.push("/complete-profile");
             }
         }
-    }, [user, loading, router, allowedRoles]);
+    }, [user, loading, router, allowedRoles, pathname]);
 
     // Show a loading state while checking authentication
     if (loading) {
@@ -38,6 +41,11 @@ export default function ProtectedRoute({ children, allowedRoles }: ProtectedRout
     // Only render children if user is authenticated and has the correct role (if restricted)
     if (!user || (allowedRoles && !allowedRoles.includes(user.role))) {
         return null; // Will redirect in useEffect
+    }
+
+    // Don't render protected content if profile isn't complete (unless they are admin/verification)
+    if (!user.profileCompleted && user.role !== "admin" && user.role !== "verification_team" && pathname !== "/complete-profile") {
+        return null;
     }
 
     // Pass the authorization check! Render the protected view.

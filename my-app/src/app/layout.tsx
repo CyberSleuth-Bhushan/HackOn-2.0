@@ -22,7 +22,9 @@ export default function RootLayout({
       <body className={`${inter.className} bg-slate-950 text-slate-50 min-h-screen antialiased`}>
         <AuthProvider>
           <Navbar />
-          {children}
+          <main className="pt-20">
+            {children}
+          </main>
         </AuthProvider>
       </body>
     </html>
