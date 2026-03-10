@@ -73,20 +73,27 @@ async function seed() {
             const textToEmbed = `${node.name || node.title} ${node.type} ${node.department || ""} ${(node.expertise || node.keywords || node.interests || []).join(" ")}`;
 
             const result = await genAI.models.embedContent({
-                model: "text-embedding-004",
+                model: "gemini-embedding-001",
                 contents: textToEmbed,
             });
             const embedding = result.embeddings[0].values;
 
             vectors.push({
                 id: node.id,
-                values: embedding,
+                values: Array.from(embedding),
                 metadata: { type: node.type, name: node.name || node.title }
             });
         }
 
         // Upsert in batches of 100 max (we only have 10 here)
-        await index.upsert(vectors);
+        console.log('Total constructed vectors ready for Pinecone:', vectors.length);
+        if (vectors.length > 0) {
+            console.log('Sample vector:', JSON.stringify(vectors[0]).substring(0, 100) + '...');
+            await index.upsert({ records: vectors });
+            console.log("Pinecone vectors uploaded successfully!");
+        } else {
+            console.warn("Vectors array is empty! Skipping Pinecone upsert.");
+        }
         console.log("Pinecone vectors uploaded successfully!");
     } else {
         console.log("Skipping Pinecone: Missing PINECONE_API_KEY or GEMINI_API_KEY.");

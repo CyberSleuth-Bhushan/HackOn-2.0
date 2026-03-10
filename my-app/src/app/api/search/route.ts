@@ -1,11 +1,11 @@
 import { NextResponse } from "next/server";
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenAI } from "@google/genai";
 import { getPineconeIndex } from "@/lib/pinecone/pineconeClient";
 import { adminDb } from "@/lib/firebase/firebaseAdmin";
 import admin from "firebase-admin";
 
 // Delay initialization so module doesn't crash on boot if key is missing
-const getGenAI = () => new GoogleGenerativeAI(process.env.GEMINI_API_KEY || "dummy");
+const getGenAI = () => new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || "dummy" });
 
 export async function POST(req: Request) {
     try {
@@ -23,11 +23,18 @@ export async function POST(req: Request) {
         }
 
         const genAI = getGenAI();
-        const model = genAI.getGenerativeModel({ model: "text-embedding-004" });
 
         // 1. Generate text embedding for the search query using Gemini
-        const result = await model.embedContent(query);
-        const embedding = result.embedding.values;
+        const result = await genAI.models.embedContent({
+            model: "gemini-embedding-001",
+            contents: query,
+        });
+
+        if (!result.embeddings || result.embeddings.length === 0) {
+            return NextResponse.json({ error: "Failed to generate embedding" }, { status: 500 });
+        }
+
+        const embedding = Array.from(result.embeddings[0].values || []);
 
         // 2. Query Pinecone Vector Database
         const index = getPineconeIndex();

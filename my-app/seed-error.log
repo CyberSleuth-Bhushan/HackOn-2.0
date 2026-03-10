@@ -2,11 +2,18 @@ Starting Seed Process...
 Uploading Nodes to Firestore...
 Uploading Edges to Firestore...
 Generating Gemini Embeddings & Uploading to Pinecone...
-ApiError: {"error":{"code":404,"message":"models/text-embedding-004 is not found for API version v1beta, or is not supported for embedContent. Call ListModels to see the list of available models and their supported methods.","status":"NOT_FOUND"}}
-    at throwErrorIfNotOK (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@google\genai\dist\node\index.cjs:12706:30)
+Total constructed vectors ready for Pinecone: 10
+Sample vector: {"id":"prof_1","values":[-0.006605916,-0.0069911527,0.0024832168,-0.042501163,-0.028064843,0.0151016...
+PineconeBadRequestError: Vector dimension 3072 does not match the dimension of the index 76
+    at mapHttpStatusError (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@pinecone-database\pinecone\dist\errors\http.js:173:20)
+    at handleApiError (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@pinecone-database\pinecone\dist\errors\handling.js:16:46)
     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
-    at async C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@google\genai\dist\node\index.cjs:12409:13
-    at async Models.embedContent (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@google\genai\dist\node\index.cjs:13749:24)
-    at async seed (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\scripts\seed-database.js:75:28) {
-  status: 404
+    at async Object.post (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@pinecone-database\pinecone\dist\utils\middleware.js:97:29)
+    at async VectorOperationsApi.fetchApi (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@pinecone-database\pinecone\dist\pinecone-generated-ts-fetch\db_data\runtime.js:200:28)
+    at async VectorOperationsApi.request (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@pinecone-database\pinecone\dist\pinecone-generated-ts-fetch\db_data\runtime.js:113:26)
+    at async VectorOperationsApi.upsertVectorsRaw (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@pinecone-database\pinecone\dist\pinecone-generated-ts-fetch\db_data\apis\VectorOperationsApi.js:415:26)
+    at async VectorOperationsApi.upsertVectors (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@pinecone-database\pinecone\dist\pinecone-generated-ts-fetch\db_data\apis\VectorOperationsApi.js:429:26)
+    at async UpsertCommand.run (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@pinecone-database\pinecone\dist\data\vectors\upsert.js:30:9)
+    at async Index.upsert (C:\Users\bhush\Documents\GitHub\HackOn 2.0\my-app\node_modules\@pinecone-database\pinecone\dist\data\index.js:396:16) {
+  cause: undefined
 }
